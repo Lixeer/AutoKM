@@ -1,8 +1,8 @@
-set(srcs "auto_kv_main.c"
-         "esp_hid_gap.c")
-set(include_dirs ".")
+idf_component_register(SRCS "auto_km_main.c"
+                            "esp_hidd_prf_api.c"
+                            "hid_dev.c"
+                            "hid_device_le_prf.c"
+                    PRIV_REQUIRES bt nvs_flash esp_driver_gpio
+                    INCLUDE_DIRS ".")
 
-idf_component_register(SRCS "${srcs}"
-                       INCLUDE_DIRS "${include_dirs}"
-                       REQUIRES esp_hid
-                       PRIV_REQUIRES nvs_flash)
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
