@@ -4,11 +4,14 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
+#include "freertos/mpu_wrappers.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "esp_system.h"
@@ -28,6 +31,7 @@
 #include "driver/gpio.h"
 #include "hid_dev.h"
 #include "portmacro.h"
+#include "esp_random.h"
 
 /**
  * Brief:
@@ -53,7 +57,7 @@
 
 static uint16_t hid_conn_id = 0;
 static bool sec_conn = false;
-static bool send_volum_up = false;
+
 #define CHAR_DECLARATION_SIZE   (sizeof(uint8_t))
 
 static void hidd_event_callback(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param);
@@ -169,21 +173,80 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     }
 }
+uint32_t random_range(uint32_t min, uint32_t max) {
+
+    uint32_t range = max - min + 1;
+
+    return min + (esp_random() % range);
+}
+
+static void click(uint8_t key_value,uint32_t max_jitter_ms,uint32_t min_jitter_ms,bool enable_jitter){
+    uint8_t key_buffer[6] = {key_value,0,0,0,0,0};
+    esp_hidd_send_keyboard_value(hid_conn_id, 0, key_buffer, 6);
+    key_buffer[0] = 0;
+    if(enable_jitter){
+        vTaskDelay(100/ portTICK_PERIOD_MS);
+    }
+    
+    esp_hidd_send_keyboard_value(hid_conn_id, 0, key_buffer, 6);
+    if(enable_jitter){
+        vTaskDelay(random_range(min_jitter_ms,max_jitter_ms) / portTICK_PERIOD_MS);
+    }
+   
+}
+void click_test(uint8_t key_value){
+    printf("click %lu\n" , random_range(300 , 500));
+    printf("click %u\n" , key_value);
+    uint8_t key_buffer[6] = {key_value,0,0,0,0,0};
+    esp_hidd_send_keyboard_value(hid_conn_id, 0, key_buffer, 6);
+    vTaskDelay(10/ portTICK_PERIOD_MS);
+    memset(key_buffer, 0, sizeof(key_value));
+    esp_hidd_send_keyboard_value(hid_conn_id, 0, key_buffer, 6);
+}
+
+static void simple_click(uint8_t key_value,bool enable_jitter)
+{
+    click(key_value,500,0,enable_jitter);
+}
 
 void hid_demo_task(void *pvParameters)
 {
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     while(1) {
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        //vTaskDelay(500 / portTICK_PERIOD_MS);
         if (sec_conn) {
-            uint8_t key_value[6] = {HID_KEY_A,0,0,0,0,0};
-            esp_hidd_send_keyboard_value(hid_conn_id, 0, key_value, 6);
-            ESP_LOGI(HID_DEMO_TAG, "Send the volume");
-            vTaskDelay(10/portTICK_PERIOD_MS);
-            memset(key_value, 0, sizeof(key_value));
-            esp_hidd_send_keyboard_value(hid_conn_id, 0, key_value, 6);
+            vTaskDelay(5*1000/portTICK_PERIOD_MS);
+
+            simple_click(HID_KEY_TAB,true);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+            simple_click(HID_KEY_3,true);
+            vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+            simple_click(HID_KEY_ESCAPE,true );
+            vTaskDelay(2*1000 / portTICK_PERIOD_MS);
+            simple_click(HID_KEY_6,true);
+            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            simple_click(HID_KEY_R,true);
+            vTaskDelay(10*1000 / portTICK_PERIOD_MS);
+            simple_click(HID_KEY_X,true);
+            vTaskDelay(1*1000 / portTICK_PERIOD_MS);
             
-            
+            // printf("click key x");
+            // simple_click(HID_KEY_X,true);            
+            // vTaskDelay(1000 / portTICK_PERIOD_MS);
+            // printf("click key tab");
+            // simple_click(HID_KEY_TAB,true);
+            // vTaskDelay(1000/portTICK_PERIOD_MS);
+            // printf("click key 3");
+            // simple_click(HID_KEY_3,true);
+            // vTaskDelay(5*1000/portTICK_PERIOD_MS);
+            // printf("click key escape");
+            // simple_click(HID_KEY_ESCAPE,true);
+            // vTaskDelay(1000/portTICK_PERIOD_MS);
+            // printf("click key r");
+            // simple_click(HID_KEY_R,true);
+            // vTaskDelay(10*1000/portTICK_PERIOD_MS);
+
             
             
         }
