@@ -1,3 +1,5 @@
 src/.cache/
 src/build/
 src/.vscode/
+.vscode/
+build/

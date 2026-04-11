@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#define  DEV 0
+#define  PUSH 1
+//PUSH 上线代码  DEV 测试代码
+
+#define  SWITCH_DEV_OR_PUSH DEV
+
+#if SWITCH_DEV_OR_PUSH == PUSH
+{
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,6 +40,8 @@
 #include "hid_dev.h"
 #include "portmacro.h"
 #include "esp_random.h"
+
+#include "project_hal/hal.h"
 
 /**
  * Brief:
@@ -224,12 +234,9 @@ void hid_demo_task(void *pvParameters)
             vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
             simple_click(HID_KEY_ESCAPE,true );
             vTaskDelay(2*1000 / portTICK_PERIOD_MS);
-            simple_click(HID_KEY_6,true);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            simple_click(HID_KEY_R,true);
-            vTaskDelay(10*1000 / portTICK_PERIOD_MS);
-            simple_click(HID_KEY_X,true);
-            vTaskDelay(1*1000 / portTICK_PERIOD_MS);
+            simple_click(HID_KEY_SPACEBAR,true);
+            
+            
             
             // printf("click key x");
             // simple_click(HID_KEY_X,true);            
@@ -255,7 +262,8 @@ void hid_demo_task(void *pvParameters)
 
 
 void app_main(void)
-{
+{   
+    
     esp_err_t ret;
 
     // Initialize NVS.
@@ -319,3 +327,16 @@ void app_main(void)
 
     xTaskCreate(&hid_demo_task, "hid_task", 2048, NULL, 5, NULL);
 }
+
+}
+#elif SWITCH_DEV_OR_PUSH == DEV
+
+
+#include "p_hal.h"
+void app_main(void)
+{   
+    p_hal_get_device_initializer()->system_init();
+    p_hal_printf("hello");
+}
+
+#endif
