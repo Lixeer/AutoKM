@@ -16,7 +16,8 @@ p_hal_err_t esp32_system_init(void){
     return ret;
 }
 p_hal_err_t esp32_wifi_init(void){
-    
+    return P_HAL_OK;
 }
 p_hal_err_t esp32_wifi_begin(const char *ssid, const char *password){ 
+    return P_HAL_OK;
 }
