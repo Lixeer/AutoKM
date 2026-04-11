@@ -1,122 +1,47 @@
 name: Build AutoKM Firmware
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
-    inputs:
-      custom_targets:
-        description: 'Custom targets (comma-separated, leave empty for all)'
-        required: false
-        default: ''
+  push:
+    branches: [ main ]
+    paths:
+      - "src/**"
+  pull_request:
+    paths:
+      - "src/**"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+   
     strategy:
       fail-fast: false
       matrix:
-        # 支持蓝牙的ESP32系列芯片
-        target:
-          - esp32        # ESP32 (original)
-          - esp32s3      # ESP32-S3 (支持BLE 5.0)
-          - esp32c2      # ESP32-C2 (支持BLE 5.0)
-          - esp32c3      # ESP32-C3 (支持BLE 5.0)
-          - esp32c6      # ESP32-C6 (支持BLE 5.3, 802.15.4)
-          - esp32h2      # ESP32-H2 (支持BLE 5.3, 802.15.4)
-         
-      
+        include:
+          - target: esp32c6
+          - target: esp32s3
+          - target: esp32
 
-      # 可选：通过workflow_dispatch手动选择
-      include:
-        - target: esp32s3
-          flash_mode: qio
-          flash_size: 8MB
-        - target: esp32c3
-          flash_mode: dio
-          flash_size: 4MB
-    
-    # 允许手动选择构建哪些目标
-    max-parallel: 6  # 限制并行构建数量，避免资源耗尽
-    
+        project: src/
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
-      
-      # 清理每个目标的旧配置
-      - name: Clean old sdkconfig for ${{ matrix.target }}
-        run: |
-          # 备份可能的自定义配置
-          if [ -f "${{ matrix.project }}/sdkconfig.${{ matrix.target }}" ]; then
-            echo "Found custom sdkconfig for ${{ matrix.target }}"
-          fi
-          rm -f ${{ matrix.project }}/sdkconfig
-          rm -rf ${{ matrix.project }}/build
-      
-      # 可选：使用特定目标的配置文件
-      - name: Apply target-specific config (if exists)
-        run: |
-          if [ -f "${{ matrix.project }}/sdkconfig.${{ matrix.target }}" ]; then
-            cp ${{ matrix.project }}/sdkconfig.${{ matrix.target }} ${{ matrix.project }}/sdkconfig
-            echo "Applied custom config for ${{ matrix.target }}"
-          fi
-      
-      - name: Build with ESP-IDF for ${{ matrix.target }}
+
+      - name: Build with ESP-IDF
         uses: espressif/esp-idf-ci-action@v1
         with:
-          esp_idf_version: v5.3.2  # 使用更新的稳定版本，支持更多芯片
+          esp_idf_version: v5.5.3
           target: ${{ matrix.target }}
           path: ${{ matrix.project }}
-      
-      # 重命名固件文件以便区分不同目标
-      - name: Rename firmware artifacts
-        run: |
-          cd ${{ matrix.project }}/build
-          
-          # 重命名主要固件文件
-          if [ -f "bootloader.bin" ]; then
-            mv bootloader.bin bootloader-${{ matrix.target }}.bin
-          fi
-          if [ -f "partition-table.bin" ]; then
-            mv partition-table.bin partition-table-${{ matrix.target }}.bin
-          fi
-          if [ -f "${{ matrix.project }}.bin" ]; then
-            mv ${{ matrix.project }}.bin firmware-${{ matrix.target }}.bin
-          fi
-          # 处理可能的其他固件名称
-          for app in *.bin; do
-            if [[ $app == *".bin" ]] && [[ ! $app == *"bootloader"* ]] && [[ ! $app == *"partition-table"* ]]; then
-              if [ ! -f "firmware-${{ matrix.target }}.bin" ]; then
-                mv "$app" "firmware-${{ matrix.target }}.bin"
-              fi
-            fi
-          done
-          
-          # 可选：生成合并固件
-          if [ -f "bootloader-${{ matrix.target }}.bin" ] && [ -f "partition-table-${{ matrix.target }}.bin" ] && [ -f "firmware-${{ matrix.target }}.bin" ]; then
-            echo "Generating merged firmware for ${{ matrix.target }}"
-            $IDF_PATH/components/esptool_py/esptool/esptool.py --chip ${{ matrix.target }} merge_bin \
-              -o merged-firmware-${{ matrix.target }}.bin \
-              --flash_mode ${FLASH_MODE:-dio} \
-              --flash_size ${FLASH_SIZE:-4MB} \
-              0x1000 bootloader-${{ matrix.target }}.bin \
-              0x8000 partition-table-${{ matrix.target }}.bin \
-              0x10000 firmware-${{ matrix.target }}.bin
-          fi
-        env:
-          FLASH_MODE: ${{ matrix.flash_mode || 'dio' }}
-          FLASH_SIZE: ${{ matrix.flash_size || '4MB' }}
-      
-      # 上传每个目标的固件
-      - name: Upload firmware artifacts for ${{ matrix.target }}
+
+      - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: AutoKM-firmware-${{ matrix.target }}
+          name: firmware-${{ matrix.target }}
           path: |
-            ${{ matrix.project }}/build/*-${{ matrix.target }}.bin
-            ${{ matrix.project }}/build/merged-firmware-${{ matrix.target }}.bin
+            ${{ matrix.project }}/build/*.bin
           if-no-files-found: warn
-          retention-days: 30
-      
+          retention-days: 7
