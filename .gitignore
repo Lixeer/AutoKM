@@ -1,5 +1,7 @@
 src/.cache/
 src/build/
 src/.vscode/
+src/sdkconfig
+src/sdkconfig.lock
 .vscode/
 build/
