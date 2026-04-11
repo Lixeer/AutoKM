@@ -19,10 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: [esp32, esp32c6, esp32s3]
-          - project: src/
-
+        target: [esp32c6, esp32s3, esp32]
+        project: ['src/']
 
     steps:
       - name: Checkout repo
