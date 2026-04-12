@@ -6,13 +6,17 @@
 #include "nvs_flash.h"
 #include "p_hal.h"
 #include "esp_wifi.h"
-
+#include "esp_http_server.h"
+#include <stdint.h>
 #include <string.h>
+#define MAX_RETRY_CONNECTI 5
+
 #define TAG "[esp32_p_hal]"
 
 #define _ERROR_CHECK(code) if(code != P_HAL_OK){return code;}
-#define println(x) printf(x);printf("\n");
 
+
+static int retry_connect = 0;
 static bool ready = false;
 static void wifi_event_handler_STA(void *arg, esp_event_base_t event_base,int32_t event_id, void *event_data) {
     // 处理WIFI事件
@@ -30,6 +34,10 @@ static void wifi_event_handler_STA(void *arg, esp_event_base_t event_base,int32_
             case WIFI_EVENT_STA_DISCONNECTED:
                 // 记录热点断开日志并启用自动重连
                 p_hal_printf("%s wifi disconnected\n",TAG);
+                if (retry_connect > MAX_RETRY_CONNECTI ){
+                    return ;
+                }
+                retry_connect ++;
                 esp_wifi_connect();
                 break;
         }
@@ -41,10 +49,6 @@ static void wifi_event_handler_STA(void *arg, esp_event_base_t event_base,int32_
         p_hal_printf( "%s成功获取IP:%d.%d.%d.%d\n",TAG,IP2STR(&event->ip_info.ip));
     }
 }
-
-
-
-
 
 p_hal_err_t esp32_system_init(void){
 
@@ -114,3 +118,35 @@ p_hal_err_t esp32_wifi_begin(const char *ssid, const char *password){
 p_hal_err_t esp32_wifi_disconnect(void){ 
     return P_HAL_OK;
 }
+/*temp*/
+static esp_err_t defalut_handle(httpd_req_t *req){
+    p_hal_printf("defalut_handle\n");
+    return httpd_resp_send(req, "hello world", sizeof("hello world")/sizeof(char)+1);
+}
+///////
+
+p_hal_err_t esp32_http_server_init(uint8_t port,httpd_handle_t *server){
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    //config.server_port = port;
+    esp_err_t ret = httpd_start(server, &config);
+    ESP_ERROR_CHECK ( ret );
+    if (ret == ESP_OK){
+        p_hal_printf("httpd_start success\n");
+        p_hal_http_uri_t uri_config = {
+            .method = P_HAL_HTTP_METHOD_GET,
+            .uri = "/index",
+            .handler = defalut_handle,
+        };
+        httpd_register_uri_handler(server, &uri_config);
+    }
+    return ret;
+}
+p_hal_err_t esp32_http_server_start(void){
+    return P_HAL_OK;
+};
+p_hal_err_t esp32_http_server_stop(void){
+    return P_HAL_OK;
+};
+p_hal_err_t esp32_http_server_add_handler(p_hal_http_uri_t *uri){
+    return P_HAL_OK;
+};

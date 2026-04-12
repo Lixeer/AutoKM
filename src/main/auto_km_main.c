@@ -5,6 +5,8 @@
  */
 
 #include "freertos/idf_additions.h"
+#include "http_parser.h"
+#include "project_hal/p_hal.h"
 #define  DEV 0
 #define  PUSH 1
 //PUSH 上线代码  DEV 测试代码
@@ -335,7 +337,14 @@ void app_main(void)
 
 #include "p_hal.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_http_server.h"
 
+static esp_err_t defalut_handle(httpd_req_t *req)
+{
+    p_hal_printf("defalut_handle\n");
+    httpd_resp_sendstr(req, "HEELLO AUTOKM");
+    return ESP_OK;
+}
 void app_main(void)
 {   
     
@@ -346,7 +355,20 @@ void app_main(void)
     wifi_driver->init(P_HAL_WIFI_MODE_STA);
     wifi_driver->begin("459","12345678");
     
-    
+    httpd_handle_t server = NULL;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    esp_err_t ret = httpd_start(&server, &config);
+    ESP_ERROR_CHECK ( ret );
+    if (ret == ESP_OK){
+        p_hal_printf("httpd_start success\n");
+        p_hal_http_uri_t uri_config = {
+            .method = HTTP_GET,
+            .uri = "/index",
+            .handler = defalut_handle,
+        };
+        httpd_register_uri_handler(server, &uri_config);
+    }
 }
 
 #endif

@@ -22,6 +22,16 @@ const p_hal_wifi_driver_t* p_hal_get_wifi_driver(void){
     };
     return &wifi_driver;
 }
+const p_hal_http_provider* p_hal_creat_http_server(void){
+    static const p_hal_http_provider http_server = {
+        .init_server = esp32_http_server_init,
+        .start = esp32_http_server_start,
+        .stop = esp32_http_server_stop,
+        .add_handler = esp32_http_server_add_handler
+    };
+    return &http_server;
+}
+
 
 
 /**esp32 platform end**/

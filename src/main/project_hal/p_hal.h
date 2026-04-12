@@ -24,11 +24,21 @@ typedef int p_hal_err_t;
 #define PLFORM_TARGET PLF_ESP32
 /**平台选择end**/
 
+/**平台相关**/
+#if PLFORM_TARGET == PLF_ESP32
+#include "esp_http_server.h"
+typedef httpd_req_t p_hal_http_req_t;
+typedef httpd_handle_t p_hal_http_server_core_t;
+typedef httpd_uri_t p_hal_http_uri_t;
+#endif
+
+
+
 /*构建参数*/
 typedef uint8_t p_hal_wifi_mode_t;
 #define P_HAL_WIFI_MODE_STA 0
 #define P_HAL_WIFI_MODE_AP 1
-
+/** */
 
 
 typedef struct {
@@ -44,14 +54,31 @@ typedef struct{
     p_hal_err_t (*system_init)(void); // 设备初始化 会在所有业务代码开始前执行
 
 }p_hal_device_initializer;
+/////////////////
 
+/*http服务器相关*/
+#define P_HAL_HTTP_METHOD_GET 0
+#define P_HAL_HTTP_METHOD_POST 1
+#define P_HAL_HTTP_METHOD_PUT 2
+#define P_HAL_HTTP_METHOD_DELETE 3
+typedef uint8_t p_hal_http_method_t;
+
+
+
+typedef struct{
+    p_hal_err_t (*init_server)(uint8_t port,httpd_handle_t *server);
+    p_hal_err_t (*start)(void);
+    p_hal_err_t (*stop)(void);
+    p_hal_err_t (*add_handler)(p_hal_http_uri_t *uri)
+}p_hal_http_provider;
+/////////
 int p_hal_printf(void *fmt, ...);
 const p_hal_wifi_driver_t* p_hal_get_wifi_driver(void);
 const p_hal_device_initializer* p_hal_get_device_initializer(void);
+const p_hal_http_provider* p_hal_creat_http_server(void);
 
-
-/**平台相关**/
 #if PLFORM_TARGET == PLF_ESP32
 #include <stdio.h>
 #define p_hal_printf(...) printf(__VA_ARGS__)
+
 #endif
