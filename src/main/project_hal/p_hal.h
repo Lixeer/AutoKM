@@ -7,11 +7,12 @@ p_hal 的意思是project hal 项目自建的 HAL,不需要完全兼容各平台
 所有向外暴露的函数和类型都以p_hal开头，例如p_hal_printf,是为了在业务清楚知道来自哪个依赖
 */
 
+#include <stdint.h>
 typedef int p_hal_err_t;
 
 
-#define P_HAL_OK 1
-#define P_HAL_FAIL 0
+#define P_HAL_OK 0
+#define P_HAL_FAIL -1
 
 
 /**平台选择**/
@@ -23,9 +24,16 @@ typedef int p_hal_err_t;
 #define PLFORM_TARGET PLF_ESP32
 /**平台选择end**/
 
+/*构建参数*/
+typedef uint8_t p_hal_wifi_mode_t;
+#define P_HAL_WIFI_MODE_STA 0
+#define P_HAL_WIFI_MODE_AP 1
+
+
+
 typedef struct {
     // 必须实现的接口
-    p_hal_err_t (*init)(void);
+    p_hal_err_t (*init)(p_hal_wifi_mode_t mode);
     p_hal_err_t (*deinit)(void);
     p_hal_err_t (*begin)(const char *ssid, const char *password);
     

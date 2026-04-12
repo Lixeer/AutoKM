@@ -5,3 +5,4 @@ src/sdkconfig
 src/sdkconfig.lock
 .vscode/
 build/
+src/sdkconfig.old

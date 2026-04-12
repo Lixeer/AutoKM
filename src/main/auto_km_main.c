@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "freertos/idf_additions.h"
 #define  DEV 0
 #define  PUSH 1
 //PUSH 上线代码  DEV 测试代码
@@ -333,10 +334,19 @@ void app_main(void)
 
 
 #include "p_hal.h"
+#include "freertos/FreeRTOS.h"
+
 void app_main(void)
 {   
+    
     p_hal_get_device_initializer()->system_init();
     p_hal_printf("hello");
+    const p_hal_wifi_driver_t *wifi_driver =  p_hal_get_wifi_driver();
+    
+    wifi_driver->init(P_HAL_WIFI_MODE_STA);
+    wifi_driver->begin("459","12345678");
+    
+    
 }
 
 #endif

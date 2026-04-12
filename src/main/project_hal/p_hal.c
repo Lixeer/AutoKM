@@ -14,6 +14,15 @@ const p_hal_device_initializer* p_hal_get_device_initializer(void){
     return &initializer;
 }
 
+const p_hal_wifi_driver_t* p_hal_get_wifi_driver(void){
+    static const p_hal_wifi_driver_t wifi_driver = {
+        .begin = esp32_wifi_begin,
+        .init = esp32_wifi_init,
+        .deinit = esp32_wifi_disconnect
+    };
+    return &wifi_driver;
+}
+
 
 /**esp32 platform end**/
 ////////////////////////
