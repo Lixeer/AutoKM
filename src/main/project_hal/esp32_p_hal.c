@@ -125,28 +125,30 @@ static esp_err_t defalut_handle(httpd_req_t *req){
 }
 ///////
 
-p_hal_err_t esp32_http_server_init(uint8_t port,httpd_handle_t *server){
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    //config.server_port = port;
-    esp_err_t ret = httpd_start(server, &config);
-    ESP_ERROR_CHECK ( ret );
-    if (ret == ESP_OK){
-        p_hal_printf("httpd_start success\n");
-        p_hal_http_uri_t uri_config = {
-            .method = P_HAL_HTTP_METHOD_GET,
-            .uri = "/index",
-            .handler = defalut_handle,
-        };
-        httpd_register_uri_handler(server, &uri_config);
-    }
-    return ret;
-}
-p_hal_err_t esp32_http_server_start(void){
+p_hal_err_t esp32_http_server_init(void){
+    
     return P_HAL_OK;
+
+}
+p_hal_err_t esp32_http_server_start(p_hal_http_server_core *server,p_hal_http_config_t *config){
+    httpd_config_t full_config = HTTPD_DEFAULT_CONFIG();
+    full_config.server_port = config->port;
+    
+    return httpd_start(server, &full_config);
+
+
 };
 p_hal_err_t esp32_http_server_stop(void){
     return P_HAL_OK;
 };
 p_hal_err_t esp32_http_server_add_handler(p_hal_http_uri_t *uri){
+    return P_HAL_OK;
+};
+
+p_hal_err_t esp32_ble_hid_init(void){
+    p_hal_printf("hello");
+    return P_HAL_OK;
+};
+p_hal_err_t esp32_get_hid_controller(hid_controller_t *hid_controller){
     return P_HAL_OK;
 };

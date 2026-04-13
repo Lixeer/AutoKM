@@ -8,6 +8,9 @@ p_hal 的意思是project hal 项目自建的 HAL,不需要完全兼容各平台
 */
 
 #include <stdint.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
+
 typedef int p_hal_err_t;
 
 
@@ -28,17 +31,24 @@ typedef int p_hal_err_t;
 #if PLFORM_TARGET == PLF_ESP32
 #include "esp_http_server.h"
 typedef httpd_req_t p_hal_http_req_t;
-typedef httpd_handle_t p_hal_http_server_core_t;
+typedef httpd_handle_t p_hal_http_server_core;
 typedef httpd_uri_t p_hal_http_uri_t;
+
+typedef struct {
+    uint8_t port;
+
+}p_hal_http_config_t;
+
 #endif
 
 
 
-/*构建参数*/
+/**构建参数**/
+
 typedef uint8_t p_hal_wifi_mode_t;
 #define P_HAL_WIFI_MODE_STA 0
 #define P_HAL_WIFI_MODE_AP 1
-/** */
+/****/
 
 
 typedef struct {
@@ -65,17 +75,34 @@ typedef uint8_t p_hal_http_method_t;
 
 
 
+
+
 typedef struct{
-    p_hal_err_t (*init_server)(uint8_t port,httpd_handle_t *server);
-    p_hal_err_t (*start)(void);
+    p_hal_err_t (*init_server)(void);
+    p_hal_err_t (*start)(p_hal_http_server_core *server,p_hal_http_config_t *config);
     p_hal_err_t (*stop)(void);
     p_hal_err_t (*add_handler)(p_hal_http_uri_t *uri)
 }p_hal_http_provider;
+
+typedef struct{
+    QueueHandle_t *xQueue;
+    
+}hid_controller_t;
+
+
+typedef struct{
+    p_hal_err_t (*ble_hid_init)(void);
+    p_hal_err_t (*get_hid_controller)(hid_controller_t *hid_controller);
+
+}p_hal_hid_provider;
+
 /////////
 int p_hal_printf(void *fmt, ...);
 const p_hal_wifi_driver_t* p_hal_get_wifi_driver(void);
 const p_hal_device_initializer* p_hal_get_device_initializer(void);
-const p_hal_http_provider* p_hal_creat_http_server(void);
+const p_hal_http_provider* p_hal_creat_http_provider(void);
+const p_hal_hid_provider* p_hal_creat_hid_provider(void);
+
 
 #if PLFORM_TARGET == PLF_ESP32
 #include <stdio.h>

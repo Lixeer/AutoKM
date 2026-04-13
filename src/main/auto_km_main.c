@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "esp_err.h"
 #include "freertos/idf_additions.h"
 #include "http_parser.h"
 #include "project_hal/p_hal.h"
@@ -337,14 +338,21 @@ void app_main(void)
 
 #include "p_hal.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_http_server.h"
+#include "html.h"
 
 static esp_err_t defalut_handle(httpd_req_t *req)
 {
     p_hal_printf("defalut_handle\n");
-    httpd_resp_sendstr(req, "HEELLO AUTOKM");
+    httpd_resp_sendstr(req, HTML_PAGE);
     return ESP_OK;
 }
+esp_err_t wrap_start_server(httpd_handle_t *server,httpd_config_t *config)
+{ 
+    return httpd_start(server, config);
+}
+
+
+
 void app_main(void)
 {   
     
@@ -356,11 +364,14 @@ void app_main(void)
     wifi_driver->begin("459","12345678");
     
     httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-
-    esp_err_t ret = httpd_start(&server, &config);
+    p_hal_http_config_t config = {
+        .port = 80
+    };
+    const p_hal_http_provider *http_provider = p_hal_creat_http_provider();
+    p_hal_err_t ret = http_provider->start(&server,&config);
+    
     ESP_ERROR_CHECK ( ret );
-    if (ret == ESP_OK){
+    if (ret == P_HAL_OK){
         p_hal_printf("httpd_start success\n");
         p_hal_http_uri_t uri_config = {
             .method = HTTP_GET,
@@ -369,6 +380,9 @@ void app_main(void)
         };
         httpd_register_uri_handler(server, &uri_config);
     }
+
+    const p_hal_hid_provider *hid_provider = p_hal_creat_hid_provider();
+    hid_provider->ble_hid_init();
 }
 
 #endif
