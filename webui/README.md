@@ -1,5 +1,5 @@
 # AutoKM WebUI
-作者：WindAFeng
+作者：[WindAFeng](https://github.com/WindAFeng)
 
 该模板可帮助你快速使用 Vue 3 和 Vite 开始开发。
 
